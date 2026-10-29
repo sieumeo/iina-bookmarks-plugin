@@ -1,0 +1,495 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bookmarks</title>
+<style>
+  :root {
+    --text: rgba(0, 0, 0, 0.88);
+    --text-2: rgba(0, 0, 0, 0.55);
+    --text-3: rgba(0, 0, 0, 0.35);
+    --line: rgba(0, 0, 0, 0.1);
+    --hover: rgba(0, 0, 0, 0.05);
+    --field: rgba(0, 0, 0, 0.05);
+    --accent: #0a84ff;
+    --accent-soft: rgba(10, 132, 255, 0.14);
+    --danger: #e5484d;
+    --thumb-bg: rgba(0, 0, 0, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: rgba(255, 255, 255, 0.9);
+      --text-2: rgba(255, 255, 255, 0.55);
+      --text-3: rgba(255, 255, 255, 0.32);
+      --line: rgba(255, 255, 255, 0.1);
+      --hover: rgba(255, 255, 255, 0.06);
+      --field: rgba(255, 255, 255, 0.08);
+      --accent-soft: rgba(10, 132, 255, 0.25);
+      --thumb-bg: rgba(255, 255, 255, 0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 12px/1.35 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: var(--text);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  button {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: default;
+  }
+  svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6;
+        stroke-linecap: round; stroke-linejoin: round; display: block; }
+
+  header { position: sticky; top: 0; z-index: 2; padding: 10px 10px 8px; backdrop-filter: blur(20px);
+           -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--line); }
+  .row { display: flex; align-items: center; gap: 6px; }
+  .row + .row { margin-top: 8px; }
+  .seg { display: flex; background: var(--field); border-radius: 6px; padding: 2px; }
+  .seg button { padding: 3px 9px; border-radius: 4px; color: var(--text-2); }
+  .seg button.on { background: var(--accent-soft); color: var(--text); }
+  .icon-btn { width: 24px; height: 22px; border-radius: 5px; display: grid; place-items: center; color: var(--text-2); }
+  .icon-btn:hover { background: var(--hover); color: var(--text); }
+  .icon-btn.on { color: var(--accent); }
+  .spacer { flex: 1; }
+  .add-btn { display: flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 6px;
+             background: var(--accent); color: #fff; }
+  .add-btn svg { stroke-width: 2; }
+  .add-btn:disabled { opacity: 0.4; }
+  input.search { flex: 1; min-width: 0; font: inherit; color: inherit; background: var(--field);
+                 border: 0; border-radius: 6px; padding: 4px 8px; outline: none; }
+  input.search:focus { box-shadow: 0 0 0 2px var(--accent-soft); }
+  .nav { display: flex; gap: 2px; }
+
+  .file-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { color: var(--text-2); }
+
+  main { padding: 4px 6px 16px; }
+  .empty { padding: 40px 18px; text-align: center; color: var(--text-2); }
+  .empty b { display: block; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+  .empty kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--field); border-radius: 4px; padding: 1px 5px; }
+
+  .group-head { display: flex; align-items: baseline; gap: 6px; padding: 12px 6px 4px; }
+  .group-head .file-title { flex: 1; min-width: 0; }
+  .group-head .now { color: var(--accent); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .link { color: var(--text-2); font-size: 11px; }
+  .link:hover { color: var(--danger); }
+
+  /* list view */
+  .item { position: relative; display: flex; gap: 8px; padding: 6px; border-radius: 7px; }
+  .item:hover { background: var(--hover); }
+  .item.current { background: var(--accent-soft); }
+  .thumb { flex: none; width: 96px; height: 54px; border-radius: 4px; background: var(--thumb-bg);
+           background-size: cover; background-position: center; position: relative; overflow: hidden; }
+  .thumb .t { position: absolute; right: 3px; bottom: 3px; font: 600 10px ui-monospace, Menlo, monospace;
+              color: #fff; background: rgba(0, 0, 0, 0.6); padding: 0 4px; border-radius: 3px; }
+  .no-thumb .thumb { display: none; }
+  .body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .time { font: 600 11px ui-monospace, Menlo, monospace; color: var(--accent); }
+  .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .title.placeholder { color: var(--text-2); font-weight: 400; }
+  .note { color: var(--text-2); font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+  .actions { position: absolute; top: 4px; right: 4px; display: none; gap: 1px; border-radius: 6px;
+             background: var(--field); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .item:hover .actions { display: flex; }
+  .actions .icon-btn.del:hover { color: var(--danger); }
+
+  /* grid view */
+  .grid .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; padding: 4px 0; }
+  .grid .item { flex-direction: column; gap: 4px; padding: 5px; }
+  .grid .thumb { width: 100%; height: auto; aspect-ratio: 16 / 9; min-height: 60px; }
+  .grid .no-thumb .thumb { display: block; }
+  .grid .time { display: none; }
+  .grid .note { -webkit-line-clamp: 1; }
+
+  /* edit form */
+  .edit { padding: 6px; border-radius: 7px; background: var(--hover); display: flex; flex-direction: column; gap: 6px; }
+  .edit input, .edit textarea { font: inherit; color: inherit; background: var(--field); border: 0; border-radius: 5px;
+                                padding: 5px 7px; outline: none; width: 100%; -webkit-user-select: text; user-select: text; }
+  .edit textarea { resize: vertical; min-height: 44px; }
+  .edit input:focus, .edit textarea:focus { box-shadow: 0 0 0 2px var(--accent-soft); }
+  .edit .btns { display: flex; justify-content: flex-end; gap: 6px; }
+  .edit .btns button { padding: 3px 10px; border-radius: 5px; background: var(--field); }
+  .edit .btns button.primary { background: var(--accent); color: #fff; }
+  .edit .time-row { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+  .edit .time-row input { width: 90px; font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div class="seg" id="scope">
+      <button data-scope="file" class="on">This file</button>
+      <button data-scope="all">All files</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="view-list" title="List view">
+      <svg viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>
+    </button>
+    <button class="icon-btn" id="view-grid" title="Thumbnail view">
+      <svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1"/><rect x="9" y="9" width="4.5" height="4.5" rx="1"/></svg>
+    </button>
+  </div>
+  <div class="row">
+    <input class="search" id="search" type="search" placeholder="Search bookmarks">
+    <div class="nav" id="nav">
+      <button class="icon-btn" id="prev" title="Previous bookmark">
+        <svg viewBox="0 0 16 16"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+      </button>
+      <button class="icon-btn" id="next" title="Next bookmark">
+        <svg viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+      </button>
+    </div>
+    <button class="add-btn" id="add" title="Add bookmark at current position">
+      <svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>Add
+    </button>
+  </div>
+</header>
+<main id="main"></main>
+
+<script>
+(function () {
+  "use strict";
+
+  var ui = {
+    scope: "file",
+    view: "list",
+    query: "",
+    editing: null,     // { url, id }
+    data: { current: null, files: [], thumbsEnabled: true },
+    position: 0,
+    thumbs: {},        // id -> dataUrl | null
+    requested: {},     // ids already requested from the plugin
+  };
+
+  try {
+    var saved = JSON.parse(localStorage.getItem("bookmarks-ui") || "{}");
+    if (saved.view === "grid" || saved.view === "list") ui.view = saved.view;
+    if (saved.scope === "all" || saved.scope === "file") ui.scope = saved.scope;
+  } catch (e) {}
+
+  function persistUi() {
+    try { localStorage.setItem("bookmarks-ui", JSON.stringify({ view: ui.view, scope: ui.scope })); } catch (e) {}
+  }
+
+  function send(name, data) { iina.postMessage(name, data === undefined ? {} : data); }
+
+  function decode(msg) {
+    try { return JSON.parse(decodeURIComponent(msg.d)); } catch (e) { return null; }
+  }
+
+  function on(name, fn) {
+    iina.onMessage(name, function (msg) {
+      var data = decode(msg);
+      if (data) fn(data);
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return h > 0 ? h + ":" + p(m) + ":" + p(s) : m + ":" + p(s);
+  }
+
+  // "1:02:03", "2:03", "123" or "123.5" -> seconds
+  function parseTime(str) {
+    str = String(str || "").trim();
+    if (!str) return null;
+    var parts = str.split(":");
+    if (parts.length > 3) return null;
+    var total = 0;
+    for (var i = 0; i < parts.length; i++) {
+      var n = parseFloat(parts[i]);
+      if (isNaN(n) || n < 0) return null;
+      total = total * 60 + n;
+    }
+    return total;
+  }
+
+  function currentBookmarkId(bookmarks) {
+    var cur = null;
+    for (var i = 0; i < bookmarks.length; i++) {
+      if (bookmarks[i].time <= ui.position + 0.25) cur = bookmarks[i];
+    }
+    return cur ? cur.id : null;
+  }
+
+  function matches(b) {
+    if (!ui.query) return true;
+    var q = ui.query.toLowerCase();
+    return (b.title || "").toLowerCase().indexOf(q) >= 0 ||
+           (b.note || "").toLowerCase().indexOf(q) >= 0 ||
+           fmt(b.time).indexOf(q) >= 0;
+  }
+
+  // ---------------------------------------------------------------- render
+
+  function renderItem(b, url, isCurrentFile, currentId) {
+    var editing = ui.editing && ui.editing.id === b.id;
+    if (editing) {
+      return '<div class="edit" data-id="' + esc(b.id) + '" data-url="' + esc(url) + '">' +
+        '<input class="f-title" placeholder="Title" value="' + esc(b.title) + '">' +
+        '<textarea class="f-note" placeholder="Note">' + esc(b.note) + '</textarea>' +
+        '<div class="time-row">Time <input class="f-time" value="' + esc(fmt(b.time)) + '"></div>' +
+        '<div class="btns"><button data-act="cancel">Cancel</button><button class="primary" data-act="save">Save</button></div>' +
+      '</div>';
+    }
+    var thumb = ui.thumbs[b.id];
+    var style = thumb ? ' style="background-image:url(\'' + thumb + '\')"' : "";
+    var title = b.title
+      ? '<div class="title">' + esc(b.title) + '</div>'
+      : '<div class="title placeholder">Bookmark at ' + fmt(b.time) + '</div>';
+    var cls = "item" + (isCurrentFile && b.id === currentId ? " current" : "") +
+              (!b.hasThumb && !thumb ? " no-thumb" : "");
+    return '<div class="' + cls + '" data-id="' + esc(b.id) + '" data-url="' + esc(url) + '" data-time="' + b.time + '" data-cur="' + (isCurrentFile ? 1 : 0) + '" title="' + esc(fmt(b.time)) + '">' +
+      '<div class="thumb"' + style + '><span class="t">' + fmt(b.time) + '</span></div>' +
+      '<div class="body"><div class="time">' + fmt(b.time) + '</div>' + title +
+        (b.note ? '<div class="note">' + esc(b.note) + '</div>' : "") + '</div>' +
+      '<div class="actions">' +
+        '<button class="icon-btn" data-act="edit" title="Edit"><svg viewBox="0 0 16 16"><path d="M10.5 3 13 5.5 6 12.5H3.5V10z"/></svg></button>' +
+        '<button class="icon-btn del" data-act="delete" title="Delete"><svg viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.5 8.5h6l.5-8.5"/></svg></button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderGroup(entry, isCurrentFile, showHead) {
+    var list = entry.bookmarks.filter(matches);
+    if (!list.length && ui.query) return "";
+    var currentId = isCurrentFile ? currentBookmarkId(entry.bookmarks) : null;
+    var html = "";
+    if (showHead) {
+      html += '<div class="group-head">' +
+        '<div class="file-title" title="' + esc(entry.url) + '">' + esc(entry.name) + '</div>' +
+        (isCurrentFile ? '<span class="now">Playing</span>' : '<span class="sub">' + entry.bookmarks.length + '</span>') +
+        '<button class="link" data-act="clear" data-url="' + esc(entry.url) + '">Clear</button>' +
+      '</div>';
+    }
+    html += '<div class="list">' + list.map(function (b) {
+      return renderItem(b, entry.url, isCurrentFile, currentId);
+    }).join("") + '</div>';
+    return html;
+  }
+
+  function emptyState(title, text) {
+    return '<div class="empty"><b>' + title + '</b>' + text + '</div>';
+  }
+
+  function render() {
+    document.body.className = ui.view === "grid" ? "grid" : "";
+    document.querySelectorAll("#scope button").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.scope === ui.scope);
+    });
+    document.getElementById("view-list").classList.toggle("on", ui.view === "list");
+    document.getElementById("view-grid").classList.toggle("on", ui.view === "grid");
+
+    var cur = ui.data.current;
+    document.getElementById("add").disabled = !cur;
+    document.getElementById("nav").style.display = ui.scope === "file" ? "" : "none";
+
+    var main = document.getElementById("main");
+    var html = "";
+
+    if (ui.scope === "file") {
+      if (!cur) {
+        html = emptyState("Nothing playing", "Open a video to add bookmarks.");
+      } else if (!cur.bookmarks.length) {
+        html = '<div class="group-head"><div class="file-title">' + esc(cur.name) + '</div></div>' +
+          emptyState("No bookmarks yet", "Press <kbd>⌘B</kbd> or click Add to bookmark the current moment.");
+      } else {
+        html = renderGroup(cur, true, true) ||
+          emptyState("No matches", "No bookmark matches “" + esc(ui.query) + "”.");
+      }
+    } else {
+      var files = ui.data.files.slice();
+      if (cur) {
+        files.sort(function (a, b) { return (b.url === cur.url) - (a.url === cur.url); });
+      }
+      html = files.map(function (f) {
+        return renderGroup(f, !!cur && f.url === cur.url, true);
+      }).join("");
+      if (!files.length) html = emptyState("No bookmarks", "Bookmarks from every file you watch will appear here.");
+      else if (!html) html = emptyState("No matches", "No bookmark matches “" + esc(ui.query) + "”.");
+    }
+
+    main.innerHTML = html;
+    requestMissingThumbs();
+
+    var input = main.querySelector(".edit .f-title");
+    if (input && document.activeElement !== input && !main.querySelector(".edit :focus")) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function updateCurrentHighlight() {
+    var cur = ui.data.current;
+    if (!cur) return;
+    var id = currentBookmarkId(cur.bookmarks);
+    document.querySelectorAll('.item[data-cur="1"]').forEach(function (el) {
+      el.classList.toggle("current", el.dataset.id === id);
+    });
+  }
+
+  function allBookmarks() {
+    var out = [];
+    var seen = {};
+    var push = function (b) { if (!seen[b.id]) { seen[b.id] = 1; out.push(b); } };
+    if (ui.data.current) ui.data.current.bookmarks.forEach(push);
+    ui.data.files.forEach(function (f) { f.bookmarks.forEach(push); });
+    return out;
+  }
+
+  function requestMissingThumbs() {
+    var visible = ui.scope === "file"
+      ? (ui.data.current ? ui.data.current.bookmarks : [])
+      : allBookmarks();
+    var ids = visible.filter(function (b) {
+      return b.hasThumb && !(b.id in ui.thumbs) && !ui.requested[b.id];
+    }).map(function (b) { return b.id; });
+    if (!ids.length) return;
+    ids.forEach(function (id) { ui.requested[id] = 1; });
+    for (var i = 0; i < ids.length; i += 20) send("get-thumbs", { ids: ids.slice(i, i + 20) });
+  }
+
+  // ---------------------------------------------------------------- thumbnails
+
+  // Downscale a full-size screenshot from mpv to a small JPEG for storage.
+  function downscale(id, src) {
+    var img = new Image();
+    img.onload = function () {
+      var w = 320;
+      var h = Math.max(1, Math.round(img.naturalHeight * (w / img.naturalWidth)));
+      var canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, w, h);
+      var data = canvas.toDataURL("image/jpeg", 0.8);
+      ui.thumbs[id] = data;
+      send("thumb-save", { id: id, data: data });
+    };
+    img.onerror = function () { send("thumb-failed", { id: id }); };
+    img.src = src;
+  }
+
+  // ---------------------------------------------------------------- events
+
+  function findBookmark(url, id) {
+    var list = [];
+    if (ui.data.current && ui.data.current.url === url) list = ui.data.current.bookmarks;
+    else ui.data.files.forEach(function (f) { if (f.url === url) list = f.bookmarks; });
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function saveEdit(form) {
+    var url = form.dataset.url, id = form.dataset.id;
+    var b = findBookmark(url, id);
+    var changes = {
+      url: url, id: id,
+      title: form.querySelector(".f-title").value,
+      note: form.querySelector(".f-note").value,
+    };
+    var t = parseTime(form.querySelector(".f-time").value);
+    if (t !== null && b && Math.abs(t - b.time) >= 1) changes.time = t;
+    ui.editing = null;
+    send("update", changes);
+    render();
+  }
+
+  document.getElementById("main").addEventListener("click", function (e) {
+    var actEl = e.target.closest("[data-act]");
+    var act = actEl && actEl.dataset.act;
+    if (act === "clear") return send("clear", { url: actEl.dataset.url });
+
+    var form = e.target.closest(".edit");
+    if (form) {
+      if (act === "save") saveEdit(form);
+      else if (act === "cancel") { ui.editing = null; render(); }
+      return;
+    }
+
+    var item = e.target.closest(".item");
+    if (!item) return;
+    var url = item.dataset.url, id = item.dataset.id;
+    if (act === "edit") { ui.editing = { url: url, id: id }; render(); return; }
+    if (act === "delete") { send("delete", { url: url, id: id }); return; }
+    if (item.dataset.cur === "1") send("jump", { id: id });
+    else send("open", { url: url, time: parseFloat(item.dataset.time) });
+  });
+
+  document.getElementById("main").addEventListener("dblclick", function (e) {
+    var item = e.target.closest(".item");
+    if (!item || e.target.closest("[data-act]")) return;
+    ui.editing = { url: item.dataset.url, id: item.dataset.id };
+    render();
+  });
+
+  document.getElementById("main").addEventListener("keydown", function (e) {
+    var form = e.target.closest(".edit");
+    if (!form) return;
+    if (e.key === "Escape") { ui.editing = null; render(); e.preventDefault(); }
+    else if (e.key === "Enter" && (e.target.tagName === "INPUT" || e.metaKey)) { saveEdit(form); e.preventDefault(); }
+  });
+
+  document.getElementById("scope").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    ui.scope = b.dataset.scope;
+    ui.editing = null;
+    persistUi();
+    render();
+  });
+  document.getElementById("view-list").addEventListener("click", function () { ui.view = "list"; persistUi(); render(); });
+  document.getElementById("view-grid").addEventListener("click", function () { ui.view = "grid"; persistUi(); render(); });
+  document.getElementById("add").addEventListener("click", function () { send("add"); });
+  document.getElementById("prev").addEventListener("click", function () { send("prev"); });
+  document.getElementById("next").addEventListener("click", function () { send("next"); });
+  document.getElementById("search").addEventListener("input", function (e) {
+    ui.query = e.target.value.trim();
+    render();
+  });
+
+  // ---------------------------------------------------------------- plugin messages
+
+  on("state", function (data) {
+    ui.data = data;
+    ui.position = data.current ? data.current.position : 0;
+    if (ui.editing && !findBookmark(ui.editing.url, ui.editing.id)) ui.editing = null;
+    // Don't wipe a half-typed edit when the plugin pushes an unrelated update.
+    if (ui.editing && document.querySelector(".edit")) return;
+    render();
+  });
+
+  on("position", function (data) {
+    ui.position = data.position;
+    updateCurrentHighlight();
+  });
+
+  on("thumbs", function (data) {
+    var changed = false;
+    Object.keys(data.map || {}).forEach(function (id) {
+      if (ui.thumbs[id] !== data.map[id]) { ui.thumbs[id] = data.map[id]; changed = true; }
+    });
+    if (changed && !(ui.editing && document.querySelector(".edit"))) render();
+  });
+
+  on("thumb-raw", function (data) { downscale(data.id, data.src); });
+
+  render();
+  send("ready");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "Bookmarks",
+  "identifier": "io.github.sieumeo.iina-bookmarks",
+  "version": "1.0.0",
+  "description": "Bookmark moments in videos: hotkeys to add, delete and jump between bookmarks, a sidebar manager with thumbnails, and markers on the progress bar.",
+  "author": {
+    "name": "Tuan-Anh Phan",
+    "url": "https://github.com/sieumeo"
+  },
+  "entry": "main.js",
+  "sidebarTab": {
+    "name": "Bookmarks"
+  },
+  "preferencesPage": "preferences.html",
+  "preferenceDefaults": {
+    "showOnTimeline": true,
+    "captureThumbnails": true,
+    "showOsd": true,
+    "keyAdd": "Meta+b",
+    "keyAddNamed": "Meta+B",
+    "keyDelete": "Meta+BS",
+    "keyPrev": "Alt+Meta+LEFT",
+    "keyNext": "Alt+Meta+RIGHT",
+    "keyManager": "Alt+Meta+b"
+  },
+  "permissions": ["show-osd", "show-alert", "file-system"],
+  "ghRepo": "sieumeo/iina-bookmarks-plugin",
+  "ghVersion": 1
+}

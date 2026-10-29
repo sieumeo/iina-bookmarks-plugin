@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  .grid { display: grid; grid-template-columns: max-content 160px; gap: 6px 10px; align-items: center; }
+  .grid label { text-align: right; }
+  input[type="text"] { font-family: ui-monospace, Menlo, monospace; }
+  h4 { margin: 16px 0 8px; }
+  h4:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+  <h4>Display</h4>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="showOnTimeline">
+      Show bookmarks on the progress bar
+    </label>
+    <p class="small secondary pref-help">
+      Bookmarks are added to the video's chapter list so IINA draws them as ticks on the progress bar.
+      Also enable <i>Settings &gt; UI &gt; Show chapter positions in progress bar</i>.
+      Bookmarks will appear in the Chapters panel and in chapter navigation as well.
+    </p>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="captureThumbnails">
+      Capture a thumbnail when adding a bookmark
+    </label>
+  </div>
+  <div class="pref-section">
+    <label>
+      <input type="checkbox" data-type="bool" data-pref-key="showOsd">
+      Show on-screen messages
+    </label>
+  </div>
+
+  <h4>Keyboard shortcuts</h4>
+  <div class="grid">
+    <label>Add bookmark</label><input type="text" data-pref-key="keyAdd">
+    <label>Add bookmark with title</label><input type="text" data-pref-key="keyAddNamed">
+    <label>Delete bookmark</label><input type="text" data-pref-key="keyDelete">
+    <label>Previous bookmark</label><input type="text" data-pref-key="keyPrev">
+    <label>Next bookmark</label><input type="text" data-pref-key="keyNext">
+    <label>Show manager</label><input type="text" data-pref-key="keyManager">
+  </div>
+  <p class="small secondary pref-help">
+    Use mpv key names: <code>Meta</code> = &#8984;, <code>Alt</code> = &#8997;, <code>Ctrl</code> = &#8963;,
+    an uppercase letter implies &#8679; (e.g. <code>Meta+B</code> = &#8679;&#8984;B).
+    Special keys: <code>LEFT</code>, <code>RIGHT</code>, <code>UP</code>, <code>DOWN</code>, <code>BS</code> (delete).
+    Type <code>none</code> to disable a shortcut. Changes apply when the next file is opened.
+  </p>
+</body>
+</html>

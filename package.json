@@ -1,0 +1,10 @@
+{
+  "name": "iina-bookmarks-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bookmark manager plugin for IINA",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT"
+}
